@@ -4,10 +4,12 @@ import numpy
 import numpy as np
 import os
 import scipy.io.wavfile as wav
+import torch
 from python_speech_features import *
 
 
-def one_dimentional_data(data_dir='./data/', type='fan', ID = 'id_00', winlen=0.064, winstep=0.032, numcep=128,ratio_train=1):
+def one_dimentional_data(data_dir='../../data/xingqing/data_dcase2020_task2/data/', type='fan', ID='id_00',
+                         winlen=0.064, winstep=0.032, numcep=128, ratio_train=1):
     frequency_spectrum_train = []
     frequency_spectrum_test_nor = []
     frequency_spectrum_test_anor = []
@@ -22,7 +24,8 @@ def one_dimentional_data(data_dir='./data/', type='fan', ID = 'id_00', winlen=0.
         if ID in item:
             samplerate, train_signal = wav.read(data_dir + './train/' + item)
             train_freq = mfcc(train_signal, samplerate, winlen=winlen, winstep=winstep, numcep=numcep, nfilt=numcep,
-                             lowfreq=0, highfreq=None, preemph=0.97, ceplifter=22, appendEnergy=False, winfunc=numpy.hamming)
+                              lowfreq=0, highfreq=None, preemph=0.97, ceplifter=22, appendEnergy=False,
+                              winfunc=numpy.hamming)
 
             if 'normal' in item:
                 label = 1
@@ -66,7 +69,7 @@ def one_dimentional_data(data_dir='./data/', type='fan', ID = 'id_00', winlen=0.
     return data1, data1, data2, data3
 
 
-def file_to_vector_array(y, sr,  n_mels=128, frames=5, n_fft=1024, hop_length=512, power=2.0):
+def file_to_vector_array(y, sr, n_mels=128, frames=5, n_fft=1024, hop_length=512, power=2.0):
     """
     convert file_name to a vector array.
     file_name : str
@@ -104,10 +107,11 @@ def file_to_vector_array(y, sr,  n_mels=128, frames=5, n_fft=1024, hop_length=51
     return vector_array  # [309,640]
 
 
-def dnn_data_train(datadir='./data/', type='fan', ID='id_00', frames=5, numcep=128):
+def dnn_data_train(datadir='../../../data/xingqing/data_dcase2020_task2/data/', type='fan', ID='id_00', frames=5,
+                   numcep=128):
     frequency_spectrum_train = []
     frequency_spectrum_test = []
-    datadir = datadir+type
+    datadir = datadir + type
     files1 = os.listdir(datadir + '/train')
     # files2 = os.listdir(datadir + '/test')
     i = 0
@@ -116,7 +120,7 @@ def dnn_data_train(datadir='./data/', type='fan', ID='id_00', frames=5, numcep=1
     for everyone in files1:
         if ID in everyone:
             # print(everyone)
-            train_signal, samplerate = librosa.load(datadir + '/train/'+everyone, sr=None, mono=False)
+            train_signal, samplerate = librosa.load(datadir + '/train/' + everyone, sr=None, mono=False)
             train_frqe = file_to_vector_array(train_signal, samplerate, n_mels=numcep, frames=frames, n_fft=1024,
                                               hop_length=512)
 
@@ -133,37 +137,55 @@ def dnn_data_train(datadir='./data/', type='fan', ID='id_00', frames=5, numcep=1
     return data1
 
 
-def dnn_data_2test(datadir='./data/', type='fan', ID='id_00', frames=5, numcep=128):
+def dnn_data_2test(datadir='../../../data/xingqing/data_dcase2020_task2/data/', type='fan', ID='id_00', frames=5,
+                   numcep=128):
     frequency_spectrum_test_nor = []
     frequency_spectrum_test_anor = []
-    datadir = datadir+type
+    datadir = datadir + type
     files2 = os.listdir(datadir + '/test')
     j = 0
     k = 0
     for everyone in files2:
         if ID in everyone:
             # print(everyone)
-            test_signal, samplerate = librosa.load(datadir + '/test/'+everyone, sr=None, mono=False)
-            test_frequency = file_to_vector_array(test_signal, samplerate, n_mels=numcep, frames=frames, n_fft=1024, hop_length=512)
+            test_signal, samplerate = librosa.load(datadir + '/test/' + everyone, sr=None, mono=False)
+            test_frequency = file_to_vector_array(test_signal, samplerate, n_mels=numcep, frames=frames, n_fft=1024,
+                                                  hop_length=512)
 
             if 'normal' in everyone:
                 label = 1
                 if j == 0:
                     frequency_spectrum_test_nor = test_frequency
                 else:
-                    frequency_spectrum_test_nor = np.concatenate((frequency_spectrum_test_nor, test_frequency), axis=0)  # 上下拼接
+                    frequency_spectrum_test_nor = np.concatenate((frequency_spectrum_test_nor, test_frequency),
+                                                                 axis=0)  # 上下拼接
                 j += 1
             else:
                 label = 2
                 if k == 0:
                     frequency_spectrum_test_anor = test_frequency
                 else:
-                    frequency_spectrum_test_anor = np.concatenate((frequency_spectrum_test_anor, test_frequency), axis=0)  # 上下拼接
+                    frequency_spectrum_test_anor = np.concatenate((frequency_spectrum_test_anor, test_frequency),
+                                                                  axis=0)  # 上下拼接
                 k += 1
 
     data2 = frequency_spectrum_test_nor
     data3 = frequency_spectrum_test_anor
 
     return data2, data3
-
-
+#
+#
+# data_path_dev = '../../../data/xingqing/data_dcase2020_task2/data/dev/'
+# for ty_pe in ['fan', 'slider', 'pump', 'valve', 'ToyCar', 'ToyConveyor']:
+#     if ty_pe == 'ToyCar':
+#         for ID in ['id_01', 'id_02', 'id_03', 'id_04']:
+#             x_train = dnn_data_train(datadir=data_path_dev, type=ty_pe, ID=ID)
+#             x_val, x_val_a = dnn_data_2test(datadir=data_path_dev, type=ty_pe, ID=ID)
+#     elif ty_pe == 'ToyConveyor':
+#         for ID in ['id_01', 'id_02', 'id_03']:
+#             x_train = dnn_data_train(datadir=data_path_dev, type=ty_pe, ID=ID)
+#             x_val, x_val_a = dnn_data_2test(datadir=data_path_dev, type=ty_pe, ID=ID)
+#     else:
+#         for ID in ['id_00', 'id_02', 'id_04', 'id_06']:
+#             x_train = dnn_data_train(datadir=data_path_dev, type=ty_pe, ID=ID)
+#             x_val, x_val_a = dnn_data_2test(datadir=data_path_dev, type=ty_pe, ID=ID)
